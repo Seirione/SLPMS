@@ -36,3 +36,9 @@ About to write to C:\Users\Airone\OneDrive\Desktop\SLPMS\package.json:
 
 
 
+
+
+3.Backend Setup 
+cd backend --> accessing the backend 
+npm install / npm install express cors dotenv mysql2
+i used npm install express cors dotenv mysql2
