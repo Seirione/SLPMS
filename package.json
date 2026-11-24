@@ -1,0 +1,20 @@
+{
+  "name": "slpms",
+  "version": "1.0.0",
+  "description": "SLPMS for the required final project",
+  "homepage": "https://github.com/Seirione/SLPMS#readme",
+  "bugs": {
+    "url": "https://github.com/Seirione/SLPMS/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Seirione/SLPMS.git"
+  },
+  "license": "ISC",
+  "author": "Airone Pol G Bautista, Den Sarmiento, Faye Gonzalez, John , Kathleen Gonzales Yuuya Tamayo",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
