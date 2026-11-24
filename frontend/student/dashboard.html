@@ -207,7 +207,7 @@
       </div>
     </div>
 
-    <form id="submitForm">
+    <form id="submitForm" novalidate>
       <div class="form-group">
         <label for="student_name">Your Full Name</label>
         <input type="text" id="student_name" placeholder="e.g. Juan Dela Cruz" required>
@@ -230,7 +230,7 @@
 
       <div class="form-group">
         <label for="raw_score">Quiz Score Obtained</label>
-        <input type="number" id="raw_score" placeholder="Enter your score (e.g. 85)" min="0" required>
+        <input type="number" id="raw_score" placeholder="Enter your score" min="0" step="any" required>
       </div>
 
       <button type="submit" id="submitBtn">Submit Final Answer</button>
@@ -242,6 +242,18 @@
 
   <script>
     let lastActivityHash = '';
+    let activitiesList = [];
+
+    function updateMaxScoreLimit() {
+      const selectedId = Number(document.getElementById('activity_id').value);
+      const activity = activitiesList.find(a => a.id === selectedId);
+      const scoreInput = document.getElementById('raw_score');
+
+      if (activity && activity.max_score !== undefined) {
+        scoreInput.max = activity.max_score;
+        scoreInput.placeholder = `Enter your score (0 - ${activity.max_score})`;
+      }
+    }
 
     async function loadActivities() {
       try {
@@ -251,6 +263,7 @@
 
         if (currentHash === lastActivityHash) return;
         lastActivityHash = currentHash;
+        activitiesList = activities;
 
         const select = document.getElementById('activity_id');
         const previousSelection = select.value;
@@ -266,15 +279,45 @@
         }).join('');
 
         if (previousSelection) select.value = previousSelection;
+        updateMaxScoreLimit();
       } catch (err) {
         console.error('Failed to sync activities:', err);
       }
     }
 
+    document.getElementById('activity_id').addEventListener('change', updateMaxScoreLimit);
+
     document.getElementById('submitForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const btn = document.getElementById('submitBtn');
       const msgEl = document.getElementById('statusMsg');
+
+      const studentName = document.getElementById('student_name').value.trim();
+      const activityId = Number(document.getElementById('activity_id').value);
+      const rawScoreStr = document.getElementById('raw_score').value.trim();
+      const rawScore = Number(rawScoreStr);
+      const selectedActivity = activitiesList.find(a => a.id === activityId);
+
+      // Basic empty-field check
+      if (!studentName || !activityId || rawScoreStr === '' || Number.isNaN(rawScore)) {
+        msgEl.innerText = 'Error: Please complete all fields before submitting.';
+        msgEl.className = 'error';
+        return;
+      }
+
+      // Negative score check
+      if (rawScore < 0) {
+        msgEl.innerText = 'Error: Score cannot be negative.';
+        msgEl.className = 'error';
+        return;
+      }
+
+      // Max score check
+      if (selectedActivity && rawScore > Number(selectedActivity.max_score)) {
+        msgEl.innerText = `Error: Score (${rawScore}) cannot exceed the maximum score of ${selectedActivity.max_score} pts for "${selectedActivity.title}".`;
+        msgEl.className = 'error';
+        return;
+      }
 
       btn.disabled = true;
       btn.innerText = 'Submitting...';
@@ -282,10 +325,10 @@
       msgEl.innerText = '';
 
       const payload = {
-        student_name: document.getElementById('student_name').value.trim(),
-        activity_id: Number(document.getElementById('activity_id').value),
+        student_name: studentName,
+        activity_id: activityId,
         mode: document.getElementById('mode').value,
-        raw_score: Number(document.getElementById('raw_score').value)
+        raw_score: rawScore
       };
 
       try {
