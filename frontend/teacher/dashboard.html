@@ -5,6 +5,7 @@
   <title>SLPMS - Ethical Policy Simulator & Teacher Dashboard</title>
   <script src="../config/config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
   <style>
     body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 24px; background: #f1f5f9; color: #0f172a; line-height: 1.6; }
     .container { max-width: 1200px; margin: 0 auto; }
@@ -449,27 +450,36 @@
 
   document.getElementById('activityForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const msgEl = document.getElementById('actMsg');
+
     const payload = {
-      title: document.getElementById('title').value,
+      title: document.getElementById('title').value.trim(),
       max_score: Number(document.getElementById('max_score').value),
       deadline: document.getElementById('deadline').value,
       penalty_per_miss: Number(document.getElementById('penalty_per_miss').value),
       max_allowed_misses: Number(document.getElementById('max_allowed_misses').value)
     };
 
-    const res = await fetch(`${CONFIG.API_BASE_URL}/activities`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
-    const msgEl = document.getElementById('actMsg');
-    msgEl.innerText = data.message || 'Error: ' + data.error;
-    msgEl.style.color = res.ok ? '#15803d' : '#b91c1c';
+    try {
+      const res = await fetch(`${CONFIG.API_BASE_URL}/activities`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      msgEl.innerText = data.message || ('Error: ' + data.error);
+      msgEl.style.color = res.ok ? '#15803d' : '#b91c1c';
 
-    if (res.ok) {
-      e.target.reset();
-      loadTracking();
+      if (res.ok) {
+        e.target.reset();
+        document.getElementById('max_score').value = 100;
+        document.getElementById('penalty_per_miss').value = 5;
+        document.getElementById('max_allowed_misses').value = 2;
+        loadTracking();
+      }
+    } catch (err) {
+      msgEl.innerText = 'Network error: Unable to reach server.';
+      msgEl.style.color = '#b91c1c';
     }
   });
 
@@ -507,12 +517,29 @@
       const res = await fetch(`${CONFIG.API_BASE_URL}/tracking`);
       const data = await res.json();
 
+      if (!res.ok || !data.rules) {
+        document.getElementById('ruleSummary').innerText =
+          `Server notice: ${data.error || 'Waiting for backend response...'}`;
+        return;
+      }
+
+      const students = data.students || [];
+
       document.getElementById('ruleSummary').innerText =
         `Activities: ${data.total_activities} | Penalty: -${data.rules.penalty_per_miss} pts/miss | Max Misses: ${data.rules.max_allowed_misses}`;
 
-      updateChart(data.students);
+      updateChart(students);
 
-      document.getElementById('trackingBody').innerHTML = data.students.map(s => `
+      if (students.length === 0) {
+        document.getElementById('trackingBody').innerHTML = `
+          <tr>
+            <td colspan="6" style="text-align:center; color:#64748b;">No student submissions recorded yet.</td>
+          </tr>
+        `;
+        return;
+      }
+
+      document.getElementById('trackingBody').innerHTML = students.map(s => `
         <tr>
           <td><strong>${s.student_name}</strong></td>
           <td>${s.completed}</td>
