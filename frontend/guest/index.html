@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLPMS Registration</title>
+    <!-- Load config.js, NOT backend files -->
+<script src="../config/config.js"></script>
+</head>
+<body>
+    <form id="login_form">
+        <label for="user_name">User Name:</label>
+        <input type="text" id="user_name" placeholder="ex. Airone Pol" required>
+
+        <label for="password">Password:</label>
+        <input type="password" id="password" required>
+
+        <label for="confirm_password">Confirm Password:</label>
+        <input type="password" id="confirm_password" required>
+
+        <button type="submit">Submit</button>
+    </form>
+
+    <p id="result_msg"></p>
+
+    <script>
+        const login_form = document.getElementById('login_form');
+
+        // Matched variable name: login_form
+        login_form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const login_data = {
+                user_name: document.getElementById('user_name').value,
+                password: document.getElementById('password').value,
+                confirm_password: document.getElementById('confirm_password').value
+            };
+
+            const response = await fetch(`${CONFIG.API_BASE_URL}/students`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(login_data) // Matched variable name: login_data
+            });
+
+            const result = await response.json();
+            document.getElementById('result_msg').innerText = result.message;
+        });
+    </script>
+</body>
+</html>

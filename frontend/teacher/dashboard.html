@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SLPMS - Ethical Policy Simulator & Teacher Dashboard</title>
+  <script src="../config/config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 24px; background: #f1f5f9; color: #0f172a; line-height: 1.6; }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .header-bar { display: flex; justify-content: space-between; align-items: center; background: #1e293b; color: #fff; padding: 18px 24px; border-radius: 10px; margin-bottom: 20px; }
+    .live-dot { display: inline-block; width: 10px; height: 10px; background: #22c55e; border-radius: 50%; margin-right: 6px; }
+    .card { background: #fff; padding: 22px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    h1, h2, h3 { margin-top: 0; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .grid-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+    @media (max-width: 850px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    input, select, button { padding: 9px; font-size: 14px; width: 100%; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 6px; }
+    button { background: #2563eb; color: #fff; border: none; cursor: pointer; font-weight: bold; }
+    button:hover { background: #1d4ed8; }
+
+    .decision-group { margin-bottom: 14px; padding: 12px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; }
+    .decision-group label { font-weight: bold; display: block; margin-bottom: 6px; color: #1e293b; }
+    .decision-desc { font-size: 13px; color: #475569; margin-top: 4px; }
+
+    .indicator-row { margin-bottom: 14px; }
+    .indicator-header { display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 4px; }
+    .bar-bg { width: 100%; height: 16px; background: #e2e8f0; border-radius: 8px; overflow: hidden; }
+    .bar-fill { height: 100%; transition: width 0.3s ease, background-color 0.3s ease; }
+
+    .tradeoff-box { background: #fffbeb; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 6px; margin-top: 14px; }
+    .interaction-tag { display: inline-block; background: #e0e7ff; color: #3730a3; font-size: 12px; font-weight: bold; padding: 2px 8px; border-radius: 4px; margin-bottom: 4px; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+    th, td { border: 1px solid #cbd5e1; padding: 9px; text-align: left; }
+    th { background: #f1f5f9; }
+    .badge-danger { background: #fee2e2; color: #b91c1c; padding: 4px 8px; border-radius: 4px; font-weight: bold; display: inline-block; }
+    .badge-ok { background: #dcfce7; color: #15803d; padding: 4px 8px; border-radius: 4px; font-weight: bold; display: inline-block; }
+    .chart-box { position: relative; height: 260px; width: 100%; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header-bar">
+    <div>
+      <h1 style="margin:0; font-size: 22px;">SLPMS: Student Support Policy Simulator</h1>
+      <div style="font-size: 13px; color: #cbd5e1;">Helping teachers decide fair rules for online and offline student support</div>
+    </div>
+    <div><span class="live-dot"></span><strong>Live Sync</strong> (3s)</div>
+  </div>
+
+  <!-- SECTION 1: SCENARIO OVERVIEW & STAKEHOLDERS -->
+  <div class="card">
+    <h2>1. What This Simulator Is About (Scenario & People Affected)</h2>
+    <p>
+      <strong>The Problem:</strong> Our school uses a Student Learning Performance Monitoring System (SLPMS) to spot students who need extra help based on quiz scores and missed deadlines. However, setting strict rules can unintentionally punish students who have weak internet, force unnecessary travel to campus, invade student privacy, or bury teachers in paperwork.
+    </p>
+    <p style="margin-bottom:0;">
+      <strong>People Affected:</strong>
+      <strong>(1) Students</strong> (especially those without reliable home internet who must commute or submit late),
+      <strong>(2) Teachers</strong> (who must check student appeals and give extra tutoring),
+      <strong>(3) School Leaders</strong> (who must make sure grading rules are fair and easy to explain), and
+      <strong>(4) The Local Environment</strong> (affected by daily student commuting emissions and printed paper waste).
+    </p>
+  </div>
+
+  <!-- SECTION 2: ETHICAL DECISION SIMULATOR & CONSEQUENCE DASHBOARD -->
+  <div class="grid-2">
+    <!-- Left: 5 Decision Variables -->
+    <div class="card">
+      <h2>2A. School Policy Choices (5 Decisions)</h2>
+      <p style="font-size: 13px; color: #475569;">Change any rule below to see the trade-offs on the right:</p>
+
+      <div class="decision-group">
+        <label for="var_allocation">1. How Extra Tutoring Is Given Out</label>
+        <select id="var_allocation" onchange="runSimulator()">
+          <option value="equal">Equal Help (Every flagged student gets the exact same tutoring time)</option>
+          <option value="need" selected>By Student Need (More help for low scores & poor internet access)</option>
+          <option value="strict_punctuality">Strict Deadlines (Deduct points for any late submission)</option>
+        </select>
+        <div class="decision-desc">Decides who gets extra help first and whether late work is penalized.</div>
+      </div>
+
+      <div class="decision-group">
+        <label for="var_data">2. How Much Student Data We Track</label>
+        <select id="var_data" onchange="runSimulator()">
+          <option value="minimal" selected>Basic Only (Quiz scores and submission dates)</option>
+          <option value="full_telemetry">Full Tracking (Typing speed, login times, device & location)</option>
+        </select>
+        <div class="decision-desc">Decides how closely the system watches students while they work.</div>
+      </div>
+
+      <div class="decision-group">
+        <label for="var_review">3. Can Students Appeal a Flag?</label>
+        <select id="var_review" onchange="runSimulator()">
+          <option value="none">No Appeals (The computer decision is final)</option>
+          <option value="spot" selected>Random Checks (Teachers review 1 out of 5 flagged students)</option>
+          <option value="every">Review Every Appeal (Teachers check every student request)</option>
+        </select>
+        <div class="decision-desc">Decides if a human teacher double-checks the computer's decision.</div>
+      </div>
+
+      <div class="decision-group">
+        <label for="var_explain">4. Showing Reasons to Students</label>
+        <select id="var_explain" onchange="runSimulator()">
+          <option value="blackbox">Hidden Formula (Only says "Needs Extra Help")</option>
+          <option value="published" selected>Clear Breakdown (Shows exact score & missed activity rules)</option>
+        </select>
+        <div class="decision-desc">Decides whether students can see why they were flagged.</div>
+      </div>
+
+      <div class="decision-group">
+        <label for="var_travel">5. How Students Submit Work (Online vs. Commuting)</label>
+        <select id="var_travel" onchange="runSimulator()">
+          <option value="online_first" selected>Online Submission First (Submit from home; offline only if no signal)</option>
+          <option value="hybrid_weekly">Weekly Campus Drop-Off (Students travel once a week for paper checks)</option>
+          <option value="campus_only">In-Person Campus Only (Everyone must commute to submit on paper)</option>
+        </select>
+        <div class="decision-desc">Connects online system use to student jeepney/bus travel, fuel emissions, and paper waste.</div>
+      </div>
+    </div>
+
+    <!-- Right: 5 Consequence Indicators & Dynamic Ethical Explanations -->
+    <div class="card">
+      <h2>2B. Policy Results (0–100 Score)</h2>
+      <p style="font-size: 13px; color: #475569;">Every score starts at <strong>50</strong>. Improving one score often lowers another.</p>
+
+      <div class="indicator-row">
+        <div class="indicator-header">
+          <span>1. Fairness to All Students (Equity & Social Justice)</span>
+          <span id="val_equity">50</span>
+        </div>
+        <div class="bar-bg"><div id="bar_equity" class="bar-fill"></div></div>
+      </div>
+
+      <div class="indicator-row">
+        <div class="indicator-header">
+          <span>2. Trust & Accountability (Tech Governance)</span>
+          <span id="val_governance">50</span>
+        </div>
+        <div class="bar-bg"><div id="bar_governance" class="bar-fill"></div></div>
+      </div>
+
+      <div class="indicator-row">
+        <div class="indicator-header">
+          <span>3. Eco-Friendly & Low Travel Impact (Sustainability)</span>
+          <span id="val_sustainability">50</span>
+        </div>
+        <div class="bar-bg"><div id="bar_sustainability" class="bar-fill"></div></div>
+      </div>
+
+      <div class="indicator-row">
+        <div class="indicator-header">
+          <span>4. Student Privacy Protection (Digital Rights)</span>
+          <span id="val_privacy">50</span>
+        </div>
+        <div class="bar-bg"><div id="bar_privacy" class="bar-fill"></div></div>
+      </div>
+
+      <div class="indicator-row">
+        <div class="indicator-header">
+          <span>5. Manageable Teacher Workload (Staff Wellbeing)</span>
+          <span id="val_wellbeing">50</span>
+        </div>
+        <div class="bar-bg"><div id="bar_wellbeing" class="bar-fill"></div></div>
+      </div>
+
+      <div class="tradeoff-box">
+        <strong>Why These Scores Changed (Plain-Language Trade-Offs):</strong>
+        <ul id="tradeoffList" style="margin: 8px 0 0 18px; padding: 0; font-size: 13px;"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3: LIVE CLASSROOM ACTIVITY PUBLISHER & REAL-TIME STUDENT GRAPH -->
+  <div class="card">
+    <h2>3. Live Classroom Activity & Student Support Tracker</h2>
+    <form id="activityForm" class="grid-form" style="margin-bottom: 14px;">
+      <div>
+        <label>Activity Title</label>
+        <input type="text" id="title" placeholder="e.g. Quiz 1: Ethics" required>
+      </div>
+      <div>
+        <label>Max Score</label>
+        <input type="number" id="max_score" value="100" required>
+      </div>
+      <div>
+        <label>Deadline</label>
+        <input type="datetime-local" id="deadline" required>
+      </div>
+      <div>
+        <label>Penalty Pts / Miss</label>
+        <input type="number" id="penalty_per_miss" value="5" required>
+      </div>
+      <div>
+        <label>Max Allowed Misses</label>
+        <input type="number" id="max_allowed_misses" value="2" required>
+      </div>
+      <div style="display:flex; align-items:flex-end;">
+        <button type="submit">+ Publish Activity</button>
+      </div>
+    </form>
+    <p id="actMsg" style="font-weight:bold;"></p>
+
+    <div class="grid-2" style="margin-top: 16px;">
+      <div>
+        <h3>Students Needing Extra Learning Support</h3>
+        <div class="chart-box">
+          <canvas id="supportChart"></canvas>
+        </div>
+      </div>
+      <div>
+        <h3>Student Submissions (1 Submission Per Activity)</h3>
+        <p id="ruleSummary" style="font-size: 13px; font-weight: bold; color: #334155;"></p>
+        <table>
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Done</th>
+              <th>Misses</th>
+              <th>Net Score</th>
+              <th>Mode</th>
+              <th>Support Status</th>
+            </tr>
+          </thead>
+          <tbody id="trackingBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 4: MODEL TRANSPARENCY (RULES, INTERACTIONS, ASSUMPTIONS, LIMITATIONS) -->
+  <div class="card">
+    <h2>4. How the Math Works: Rules, Interactions & Limits</h2>
+    <p style="font-size: 13px; color: #475569;">
+      <em>Note: These point values are sample weights created to show ethical trade-offs clearly—not real-world measurements. Every score starts at 50 and stays between 0 and 100.</em>
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Policy Choice</th>
+          <th>Fairness</th>
+          <th>Trust</th>
+          <th>Sustainability</th>
+          <th>Privacy</th>
+          <th>Teacher Workload</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Tutoring Basis:</strong> Equal / By Need / Strict Deadlines</td>
+          <td>+10 / +15 / -20</td>
+          <td>0 / +5 / -5</td>
+          <td>0 / 0 / 0</td>
+          <td>0 / 0 / 0</td>
+          <td>+5 / -5 / 0</td>
+        </tr>
+        <tr>
+          <td><strong>Data Tracked:</strong> Basic Only / Full Tracking</td>
+          <td>+Rule 1</td>
+          <td>0 / +5</td>
+          <td>+5 / -5</td>
+          <td>+25 / -25 (+Rule 4)</td>
+          <td>+5 / -10</td>
+        </tr>
+        <tr>
+          <td><strong>Appeals:</strong> None / Random Checks / Every Appeal</td>
+          <td>-10 / +5 / +10</td>
+          <td>-20 / +10 / +20 (+Rule 2)</td>
+          <td>0 / 0 / 0</td>
+          <td>0 / 0 / -5</td>
+          <td>+15 / 0 / -15 (+Rule 3)</td>
+        </tr>
+        <tr>
+          <td><strong>Reasons Shown:</strong> Hidden / Clear Breakdown</td>
+          <td>-10 / +10</td>
+          <td>-15 / +20</td>
+          <td>0 / 0</td>
+          <td>-5 / +5</td>
+          <td>+5 / -5</td>
+        </tr>
+        <tr>
+          <td><strong>Submission & Travel:</strong> Online First / Weekly Drop-Off / Campus Only</td>
+          <td>+5 / +10 / -15 (+Rule 5)</td>
+          <td>0 / 0 / +5</td>
+          <td>+25 / 0 / -25</td>
+          <td>0 / 0 / +5</td>
+          <td>+10 / 0 / -15</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin-top: 18px;">How Choices Affect Each Other (5 Interactions)</h3>
+    <ul style="font-size: 14px;">
+      <li><span class="interaction-tag">Rule 1 (Tutoring × Data)</span> <strong>Full Tracking adds +15 Fairness ONLY when Tutoring is "By Need":</strong> Extra activity logs help teachers tell who truly needs help versus who just had slow Wi-Fi. Under strict deadlines, extra tracking just spies on students without helping them (Selwyn, 2019).</li>
+      <li><span class="interaction-tag">Rule 2 (Appeals × Reasons)</span> <strong>Reviewing Every Appeal adds +10 Trust ONLY when Reasons are Clear:</strong> Teachers and students cannot fairly check or challenge a flag if the grading formula is hidden (Selbst et al., 2019).</li>
+      <li><span class="interaction-tag">Rule 3 (Appeals × Tutoring)</span> <strong>Reviewing Every Appeal drops Teacher Workload by an extra -15 under Strict Deadlines:</strong> Strict late penalties cause tons of student appeals after power or signal outages, exhausting teachers (ACM Code of Ethics §1.2).</li>
+      <li><span class="interaction-tag">Rule 4 (Data × Reasons)</span> <strong>Full Tracking drops Privacy by an extra -15 when Reasons are Hidden:</strong> Recording keystrokes and location without telling students how that data is used breaks basic privacy rules (Philippine Data Privacy Act, RA 10173).</li>
+      <li><span class="interaction-tag">Rule 5 (Travel × Tutoring)</span> <strong>Online Submission First loses -15 Fairness under Strict Deadlines:</strong> Requiring online submission while enforcing strict late penalties hurts rural or low-income students who lack stable home data (UNESCO, 2021).</li>
+    </ul>
+
+    <div class="grid-2" style="margin-top: 14px;">
+      <div style="background:#f8fafc; padding:12px; border-radius:6px; border:1px solid #e2e8f0;">
+        <strong>What We Assumed</strong>
+        <ul style="font-size: 13px; margin-bottom:0;">
+          <li>Submitting online from home cuts down daily jeepney/bus rides, saving fuel and paper.</li>
+          <li>Not every student has fast home internet, so flexible online/offline options improve fairness.</li>
+          <li>Teachers have limited work hours; more appeals and paper grading leave less time for teaching.</li>
+        </ul>
+      </div>
+      <div style="background:#f8fafc; padding:12px; border-radius:6px; border:1px solid #e2e8f0;">
+        <strong>Limits of This Simulator</strong>
+        <ul style="font-size: 13px; margin-bottom:0;">
+          <li>The 0–100 scores show trade-offs between values, not exact liters of fuel or exact student grades.</li>
+          <li>It does not measure students who live within walking distance of school.</li>
+          <li>It assumes school budgets and staffing stay fixed during the semester.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 5: REFERENCES -->
+  <div class="card">
+    <h2>5. References & Guidelines Used</h2>
+    <ol style="font-size: 13px; color: #334155;">
+      <li><strong>ACM Code of Ethics and Professional Conduct (2018):</strong> Rules 1.1 (Help society and human wellbeing), 1.4 (Be fair and avoid discrimination), and 1.6 (Respect privacy).</li>
+      <li><strong>Republic Act No. 10173 (Philippine Data Privacy Act of 2012):</strong> Section 11 — Schools must only collect student data that is necessary and clearly explained.</li>
+      <li><strong>UNESCO (2021):</strong> <em>Recommendation on the Ethics of Artificial Intelligence</em> — Protecting the environment, ensuring human oversight, and avoiding harm to disadvantaged learners.</li>
+      <li><strong>Selbst, A. D., et al. (2019):</strong> Fairness and Abstraction in Sociotechnical Systems. <em>ACM FAT* '19</em>, 59–68 (Why transparent rules matter for fair appeals).</li>
+      <li><strong>Selwyn, N. (2019):</strong> <em>Should Robots Replace Teachers? AI and the Future of Education</em>. Polity Press (Risks of heavy student surveillance in schools).</li>
+      <li><strong>Caird, S., Lane, A., Swithenby, E., Roy, R., & Potter, S. (2015):</strong> Design of higher education courses and the carbon impacts of student travel. <em>International Journal of Sustainability in Higher Education</em>, 16(1), 89–106 (How online submission reduces student commuting emissions).</li>
+    </ol>
+  </div>
+
+</div>
+
+<script>
+  const clamp = (num) => Math.max(0, Math.min(100, num));
+
+  function updateBar(id, value) {
+    document.getElementById('val_' + id).innerText = value + ' / 100';
+    const bar = document.getElementById('bar_' + id);
+    bar.style.width = value + '%';
+    bar.style.backgroundColor = value >= 70 ? '#16a34a' : value >= 45 ? '#f59e0b' : '#dc2626';
+  }
+
+  function runSimulator() {
+    const alloc = document.getElementById('var_allocation').value;
+    const data = document.getElementById('var_data').value;
+    const review = document.getElementById('var_review').value;
+    const explain = document.getElementById('var_explain').value;
+    const travel = document.getElementById('var_travel').value;
+
+    let equity = 50;
+    let governance = 50;
+    let sustainability = 50;
+    let privacy = 50;
+    let wellbeing = 50;
+    const notes = [];
+
+    // 1. Tutoring Allocation
+    if (alloc === 'equal') {
+      equity += 10; wellbeing += 5;
+      notes.push('Equal Tutoring treats all flagged students the same (+10 Fairness) and is easy to schedule (+5 Teacher Workload).');
+    } else if (alloc === 'need') {
+      equity += 15; governance += 5; wellbeing -= 5;
+      notes.push('By Student Need gives extra help to struggling and offline students (+15 Fairness) but takes more teacher planning (-5 Workload).');
+    } else if (alloc === 'strict_punctuality') {
+      equity -= 20; governance -= 5;
+      notes.push('Strict Deadlines punish students who lose internet or power (-20 Fairness).');
+    }
+
+    // 2. Data Tracked + Rule 1 + Rule 4
+    if (data === 'minimal') {
+      sustainability += 5; privacy += 25; wellbeing += 5;
+      notes.push('Basic Data Only protects student privacy (+25 Privacy) and keeps teacher reports simple (+5 Workload).');
+    } else {
+      sustainability -= 5; privacy -= 25; wellbeing -= 10;
+      if (alloc === 'need') {
+        equity += 15;
+        notes.push('[Rule 1 Active] Full Tracking helps spot who needs extra help (+15 Fairness), but lowers Privacy (-25).');
+      } else {
+        notes.push('Full Tracking watches every click (-25 Privacy) without helping struggling students.');
+      }
+      if (explain === 'blackbox') {
+        privacy -= 15;
+        notes.push('[Rule 4 Active] Tracking everything while hiding the grading rules hurts student privacy even more (-15 extra Privacy).');
+      }
+    }
+
+    // 3. Appeals + Rule 2 + Rule 3
+    if (review === 'none') {
+      equity -= 10; governance -= 20; wellbeing += 15;
+      notes.push('No Appeals saves teachers time (+15 Workload), but computer mistakes cannot be fixed (-20 Trust).');
+    } else if (review === 'spot') {
+      equity += 5; governance += 10;
+      notes.push('Random Checks catch major errors (+10 Trust) without overwhelming teachers.');
+    } else if (review === 'every') {
+      equity += 10; governance += 20; privacy -= 5; wellbeing -= 15;
+      if (explain === 'published') {
+        governance += 10;
+        notes.push('[Rule 2 Active] Clear Reasons make every appeal fair and easy to verify (+10 extra Trust).');
+      }
+      if (alloc === 'strict_punctuality') {
+        wellbeing -= 15;
+        notes.push('[Rule 3 Active] Strict deadlines create a flood of student appeals, exhausting teachers (-15 extra Workload).');
+      } else {
+        notes.push('Reviewing Every Appeal protects students (+10 Fairness) but adds heavy grading work for teachers (-15 Workload).');
+      }
+    }
+
+    // 4. Explanations
+    if (explain === 'blackbox') {
+      equity -= 10; governance -= 15; privacy -= 5; wellbeing += 5;
+    } else {
+      equity += 10; governance += 20; privacy += 5; wellbeing -= 5;
+    }
+
+    // 5. Student Submission & Travel Mode + Rule 5
+    if (travel === 'online_first') {
+      equity += 5; sustainability += 25; wellbeing += 10;
+      notes.push('Online Submission First cuts student jeepney/bus trips and paper waste (+25 Sustainability) and speeds up checking (+10 Workload).');
+      if (alloc === 'strict_punctuality') {
+        equity -= 15;
+        notes.push('[Rule 5 Active] Requiring online submission with strict late penalties hurts students with weak home signal (-15 Fairness).');
+      }
+    } else if (travel === 'hybrid_weekly') {
+      equity += 10;
+      notes.push('Weekly Campus Drop-Off gives offline students a fair way to submit (+10 Fairness) with moderate travel.');
+    } else if (travel === 'campus_only') {
+      equity -= 15; governance += 5; sustainability -= 25; privacy += 5; wellbeing -= 15;
+      notes.push('In-Person Campus Only forces every student to commute and print paper (-25 Sustainability) and burdens rural students (-15 Fairness).');
+    }
+
+    updateBar('equity', clamp(equity));
+    updateBar('governance', clamp(governance));
+    updateBar('sustainability', clamp(sustainability));
+    updateBar('privacy', clamp(privacy));
+    updateBar('wellbeing', clamp(wellbeing));
+
+    document.getElementById('tradeoffList').innerHTML = notes.map(n => `<li>${n}</li>`).join('');
+  }
+
+  // --- LIVE MYSQL CLASSROOM TRACKING ---
+  let supportChart = null;
+
+  document.getElementById('activityForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const payload = {
+      title: document.getElementById('title').value,
+      max_score: Number(document.getElementById('max_score').value),
+      deadline: document.getElementById('deadline').value,
+      penalty_per_miss: Number(document.getElementById('penalty_per_miss').value),
+      max_allowed_misses: Number(document.getElementById('max_allowed_misses').value)
+    };
+
+    const res = await fetch(`${CONFIG.API_BASE_URL}/activities`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    const msgEl = document.getElementById('actMsg');
+    msgEl.innerText = data.message || 'Error: ' + data.error;
+    msgEl.style.color = res.ok ? '#15803d' : '#b91c1c';
+
+    if (res.ok) {
+      e.target.reset();
+      loadTracking();
+    }
+  });
+
+  function updateChart(students) {
+    const ctx = document.getElementById('supportChart').getContext('2d');
+    const labels = students.map(s => s.student_name);
+    const scores = students.map(s => s.percentage);
+    const colors = students.map(s => s.needs_support ? '#ef4444' : '#22c55e');
+
+    if (supportChart) {
+      supportChart.data.labels = labels;
+      supportChart.data.datasets[0].data = scores;
+      supportChart.data.datasets[0].backgroundColor = colors;
+      supportChart.update('none');
+      return;
+    }
+
+    supportChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{ label: 'Net Score (%)', data: scores, backgroundColor: colors, borderRadius: 6 }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true, max: 100 } },
+        plugins: { legend: { display: false } }
+      }
+    });
+  }
+
+  async function loadTracking() {
+    try {
+      const res = await fetch(`${CONFIG.API_BASE_URL}/tracking`);
+      const data = await res.json();
+
+      document.getElementById('ruleSummary').innerText =
+        `Activities: ${data.total_activities} | Penalty: -${data.rules.penalty_per_miss} pts/miss | Max Misses: ${data.rules.max_allowed_misses}`;
+
+      updateChart(data.students);
+
+      document.getElementById('trackingBody').innerHTML = data.students.map(s => `
+        <tr>
+          <td><strong>${s.student_name}</strong></td>
+          <td>${s.completed}</td>
+          <td>${s.misses}</td>
+          <td><strong>${s.net_score} (${s.percentage}%)</strong></td>
+          <td>${s.preferred_mode}</td>
+          <td>
+            <span class="${s.needs_support ? 'badge-danger' : 'badge-ok'}">
+              ${s.needs_support ? 'NEEDS SUPPORT' : 'ON TRACK'}
+            </span>
+          </td>
+        </tr>
+      `).join('');
+    } catch (err) {
+      console.error('Sync error:', err);
+    }
+  }
+
+  runSimulator();
+  loadTracking();
+  setInterval(loadTracking, 3000);
+</script>
+</body>
+</html>
