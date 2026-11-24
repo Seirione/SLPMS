@@ -48,7 +48,7 @@ app.post('/api/submissions', async (req, res) => {
 
     if (existing.length > 0) {
       return res.status(409).json({
-        error: `Duplicate blocked: "${cleanName}" has already submitted this activity.`
+        error: `Duplicate blocked: "${cleanName}"Ikaw ay nag submit na.`
       });
     }
 
